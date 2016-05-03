@@ -54,9 +54,7 @@ CImgProcDlg::CImgProcDlg(CWnd* pParent /*=NULL*/)
 {
     m_pUIEventHandler = NULL;
     m_nBottomHeight = 50; 
-    m_fZoomRate = 1.0F;
-    m_nAngle = 0;
-    m_bLButtonDown = false; 
+    m_fZoomRate = 1.0F; 
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
@@ -65,8 +63,6 @@ CImgProcDlg::CImgProcDlg(IUIEventHandler* pUIEventHandler, CWnd* pParent /*= NUL
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
     m_nBottomHeight = 50; 
     m_fZoomRate = 1.0F; 
-    m_nAngle = 0;
-    m_bLButtonDown = false;  
 }
 
 
@@ -129,14 +125,7 @@ void CImgProcDlg::DrawImg()
     if ( m_pUIEventHandler )
     {
         m_pUIEventHandler->DrawImage();
-    }
-
-    // 不画边界（PIC控件边缘）
-    CRgn rgn;
-    rgn.CreateRectRgn(m_rcImgArea.left + 1, m_rcImgArea.top + 1, m_rcImgArea.Width() - 1, m_rcImgArea.Height() - 1); 
- 
-    rgn.DeleteObject(); 
-
+    } 
 }
 
 // 画 放大倍数
@@ -148,8 +137,7 @@ void CImgProcDlg::DrawZoomRate()
 void CImgProcDlg::RedrawUI()
 {
     InvalidateRect(m_rcImgArea); 
-    InvalidateRect(m_rcZoomRate);
-   // InvalidateRect(m_rcToolArea); 
+    InvalidateRect(m_rcZoomRate); 
 }
 
 void CImgProcDlg::RedrawImg()
@@ -353,9 +341,7 @@ void CImgProcDlg::OnLButtonDown(UINT nFlags, CPoint point)
     if ( m_pUIEventHandler )
     {
         m_pUIEventHandler->OnLButtonDown(nFlags, point);
-    }
-    m_bLButtonDown = true;
-    m_ptCur = point; 
+    } 
 }
 
 
@@ -365,11 +351,7 @@ void CImgProcDlg::OnLButtonUp(UINT nFlags, CPoint point)
     if ( m_pUIEventHandler )
     {
         m_pUIEventHandler->OnLButtonUp(nFlags, point);
-    }
-    m_bLButtonDown = false;
-    m_ptCur = point;
-
-    InvalidateRect(m_rcToolArea);  
+    } 
 }
 
 
@@ -379,20 +361,7 @@ void CImgProcDlg::OnMouseMove(UINT nFlags, CPoint point)
     if ( m_pUIEventHandler )
     {
         m_pUIEventHandler->OnMouseMove(nFlags, point);
-    }
-
-    if ( m_bLButtonDown )
-    {
-        POINT pt;
-        pt.x = point.x - m_ptCur.x;
-        pt.y = point.y - m_ptCur.y;
-        m_Image.MoveTo(pt);  
-         
-        InvalidateRect(m_rcImgArea);
-        InvalidateRect(m_rcZoomRate);
-        InvalidateRect(m_rcToolArea); 
-        m_ptCur = point;
-    }
+    } 
 }
 
 
@@ -403,46 +372,9 @@ BOOL CImgProcDlg::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
     if ( m_pUIEventHandler )
     {
         bRet = m_pUIEventHandler->OnMouseWheel(nFlags, zDelta, pt);
-    }
+    } 
 
-    ScreenToClient(&pt);
-    if ( m_rcImgArea.PtInRect(pt ))
-    {
-        if ( m_Image.IsNull() )
-            return TRUE;
-
-        if ( zDelta > 0 )
-        {
-            if ( m_fZoomRate >= 4.99F )
-            {
-                m_fZoomRate = 5.0F;  
-                return TRUE;
-            }
-            else
-            {
-                m_fZoomRate += 0.2F; 
-            } 
-        }
-        else
-        {
-            if ( m_fZoomRate <= 0.21F )
-            {
-                m_fZoomRate = 0.2F;
-                return TRUE;
-            }
-            else
-            {
-                m_fZoomRate -= 0.2F; 
-            }
-        }
-
-        m_Image.SetScale(m_fZoomRate, m_fZoomRate);  
-        InvalidateRect(m_rcImgArea); 
-        InvalidateRect(m_rcZoomRate);
-        InvalidateRect(m_rcToolArea); 
-    }
-    
-    return bRet;
+    return TRUE;
 }
 
 
@@ -478,14 +410,7 @@ void CImgProcDlg::OnBnClickedBtnOpen()
 
 void CImgProcDlg::OnBnClickedBtnZoom()
 {  
-    m_Image.SetScale(m_fZoomRate, m_fZoomRate);
-    InvalidateRect(m_rcImgArea); 
-
-    m_fZoomRate += 0.2F;
-    if ( m_fZoomRate >= 10.0F )
-    {
-        m_fZoomRate = 1.0F;
-    }
+     
 }
 
 

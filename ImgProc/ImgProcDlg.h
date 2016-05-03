@@ -44,11 +44,7 @@ protected:
     CGdiPlusImage m_Image;
     CString m_strZoomRate;
 
-    float m_fZoomRate;
-    bool  m_bLButtonDown; 
-    CPoint m_ptCur;  
-    int   m_nAngle;
-    
+    float m_fZoomRate;   
 
 
 
