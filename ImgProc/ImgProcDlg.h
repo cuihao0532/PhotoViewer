@@ -69,7 +69,7 @@ public:
 
     void SetWindowTitle(LPCTSTR lpTitle);
     void SetZoomRate(LPCTSTR lpZoomRate);
-    void SetZoomRate(float fRate);
+    void SetZoomRate(float fRate); 
 
 
 

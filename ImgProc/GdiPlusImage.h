@@ -76,7 +76,7 @@ public:
     void MoveTo(POINT& point);
 
     int m_nXPos;
-    int m_nYPos;
-    
+    int m_nYPos; 
     CRect m_rcDest;
+     
 };

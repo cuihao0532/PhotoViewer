@@ -15,6 +15,7 @@ CUIEventHandler::CUIEventHandler(void)
     m_fMaxZoomRate = 3.0F;
     m_fFitWindowRate = 1.0F;
     m_bFitWindow = true;
+    m_nRotationAngle = 0;
     memset(&m_ptLeftTop, 0, sizeof(m_ptLeftTop));
 }
 
@@ -32,6 +33,7 @@ CUIEventHandler::CUIEventHandler(CWnd* pWnd)
     memset(&m_ptLeftTop, 0, sizeof(m_ptLeftTop));
     m_bFitWindow = true;
     m_fFitWindowRate = 1.0F;
+    m_nRotationAngle = 0;
 
 
     m_pWnd = pWnd; 
@@ -134,7 +136,7 @@ BOOL CUIEventHandler::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
 
         if ( zDelta > 0 )
         {
-            if ( m_fZoomRate >= m_fMaxZoomRate )
+            if ( m_fZoomRate + 0.1F >= m_fMaxZoomRate )
             {  
                 m_fZoomRate = m_fMaxZoomRate; 
             }
@@ -145,18 +147,16 @@ BOOL CUIEventHandler::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
         }
         else
         {
-            bBig = false;
-
-            float fTemp = min(m_fFitWindowRate, m_fMinZoomRate);
-
-            if ( m_fZoomRate <= m_fMinZoomRate )
+            bBig = false; 
+ 
+            if ( m_fZoomRate - 0.1F <= m_fMinZoomRate )
             { 
                 m_fZoomRate = m_fMinZoomRate; 
             }
             else
             {
                 m_fZoomRate -= 0.1F; 
-            }
+            } 
         }
 
 
@@ -200,10 +200,8 @@ BOOL CUIEventHandler::OnMouseWheel(UINT nFlags, short zDelta, CPoint pt)
         m_rcDrawArea.bottom = nNewHeight + m_rcDrawArea.top;
 
         if ( m_pUINotifier )
-        {
-            TCHAR szBuf[20] = { 0 };
-            _stprintf(szBuf, TEXT("%.1fx"), m_fZoomRate); 
-            m_pUINotifier->SetZoomRate(szBuf);
+        { 
+            m_pUINotifier->SetZoomRate(m_fZoomRate);
             m_pUINotifier->RedrawUI();
         }
     }
@@ -278,6 +276,7 @@ BOOL CUIEventHandler::OpenFile(LPCTSTR lpFileName)
 
     // 打开图像时失适配窗口的缩放比例
     m_fFitWindowRate = m_fZoomRate;
+    m_fMinZoomRate   = min(0.6F, m_fFitWindowRate);
 
     // 求出图像所在的左上角坐标
     m_ptLeftTop.x = ( m_rcCancasArea.Width() - m_fZoomRate * m_nImgWidth ) / 2;
@@ -289,6 +288,9 @@ BOOL CUIEventHandler::OpenFile(LPCTSTR lpFileName)
     m_rcDrawArea.right = m_rcDrawArea.left + m_fZoomRate * m_nImgWidth;
     m_rcDrawArea.bottom = m_rcDrawArea.top + m_fZoomRate * m_nImgHeight;
     
+    // 重置旋转角度为0
+    m_nRotationAngle = 0;
+    m_Image.SetRotation(m_nRotationAngle);
 
     if ( m_pUINotifier )
     {
@@ -330,5 +332,47 @@ BOOL CUIEventHandler::DrawImage()
     m_pWnd->ReleaseDC(pDC);  
     rgn.DeleteObject(); 
 
+    return TRUE;
+}
+
+BOOL CUIEventHandler::SetRotation(int nAngle)
+{
+    if ( m_Image.IsNull() ) return FALSE;
+   
+    // 设置旋转角度
+    m_Image.SetRotation(nAngle);
+    if ( m_pUINotifier )
+    { 
+        m_pUINotifier->RedrawImg();
+    }  
+}
+
+BOOL CUIEventHandler::RotationLeft()
+{
+    if ( m_Image.IsNull() ) return FALSE;
+
+    m_nRotationAngle -= 90;
+    m_nRotationAngle = m_nRotationAngle % 360;
+
+    m_Image.SetRotation(m_nRotationAngle);
+    if ( m_pUINotifier )
+    { 
+        m_pUINotifier->RedrawImg();
+    }  
+    return TRUE;
+}
+
+BOOL CUIEventHandler::RotationRight()
+{
+    if ( m_Image.IsNull() ) return FALSE;
+
+    m_nRotationAngle += 90;
+    m_nRotationAngle = m_nRotationAngle % 360;
+
+    m_Image.SetRotation(m_nRotationAngle);
+    if ( m_pUINotifier )
+    { 
+        m_pUINotifier->RedrawImg();
+    }  
     return TRUE;
 }

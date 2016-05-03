@@ -490,31 +490,20 @@ void CImgProcDlg::OnBnClickedBtnZoom()
 
 
 void CImgProcDlg::OnBnClickedBtnZhuan()
-{
-    m_Image.Reset();
-    m_nAngle += 90;
-    m_nAngle %= 360; 
-    m_Image.SetRotation(m_nAngle);
-    m_fZoomRate = 1.0F;
-    m_Image.SetScale(m_fZoomRate, m_fZoomRate);
-    InvalidateRect(m_rcImgArea); 
-    InvalidateRect(m_rcZoomRate);
-    InvalidateRect(m_rcToolArea); 
+{  
+    if ( m_pUIEventHandler )
+    {
+        m_pUIEventHandler->RotationRight();
+    }
 }
 
 
 void CImgProcDlg::OnBnClickedBtnZhuanLeft()
-{
-    m_Image.Reset();
-    m_nAngle -= 90;
-    m_nAngle %= 360; 
-     
-    m_Image.SetRotation(m_nAngle);
-    m_fZoomRate = 1.0F;
-    m_Image.SetScale(m_fZoomRate, m_fZoomRate);
-    InvalidateRect(m_rcImgArea); 
-    InvalidateRect(m_rcZoomRate);
-    InvalidateRect(m_rcToolArea); 
+{  
+    if ( m_pUIEventHandler )
+    {
+        m_pUIEventHandler->RotationLeft();
+    }
 }
 
 

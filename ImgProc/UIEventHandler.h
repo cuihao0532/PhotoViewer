@@ -24,7 +24,9 @@ public:
     BOOL SetImgDest(CRect& rect);
     BOOL SetZoomRateDest(CRect& rect);
     BOOL DrawImage();
-
+    BOOL SetRotation(int nAngle);
+    BOOL RotationLeft();
+    BOOL RotationRight();
 
 protected:
     CGdiPlusImage m_Image;
@@ -56,6 +58,8 @@ protected:
     float m_fFitWindowRate;      // 适应窗口大小时的缩放比例
 
     bool  m_bFitWindow;          // 图片适应窗口
+
+    int   m_nRotationAngle;      // 旋转角度
 
 
 };

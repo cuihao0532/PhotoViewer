@@ -15,6 +15,9 @@ __interface IUIEventHandler
     BOOL SetImgDest(CRect& rect);
     BOOL SetZoomRateDest(CRect& rect); 
     BOOL DrawImage();
+    BOOL SetRotation(int nAngle);
+    BOOL RotationLeft();
+    BOOL RotationRight();
 
 };
  

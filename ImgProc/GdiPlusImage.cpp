@@ -311,7 +311,14 @@ bool CGdiPlusImage::DrawImage(CDC* pDC, CRect& rcDraw, CRect& rcCanvas)
         rcDrawRect.Y = rcDraw.top;
         rcDrawRect.Width = rcDraw.Width();
         rcDrawRect.Height = rcDraw.Height(); 
-         
+
+        Matrix mtr;
+        mtr.Translate(rcDrawRect.X + rcDrawRect.Width / 2, rcDrawRect.Y + rcDrawRect.Height / 2);
+        mtr.Rotate(m_nRotateAngle);
+        mtr.Translate(-(rcDrawRect.X + rcDrawRect.Width / 2), -(rcDrawRect.Y + rcDrawRect.Height / 2));
+
+        pGraphics->SetTransform(&mtr);
+
         //»æ»­Í¼Ïñ 
         //pGraphics->DrawImage(m_pImage, rcDrawRect, nXSrc, nYSrc, (REAL)nImageWidth - nXSrc * 2, (REAL)nImageHeight - nYSrc * 2, UnitPixel,&Attributes);  
         pGraphics->DrawImage(
