@@ -9,6 +9,8 @@ __interface IUIEventHandler
     BOOL OnLButtonUp(UINT nFlags, CPoint point);
     BOOL OnMouseMove(UINT nFlags, CPoint point);
     BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
+    BOOL OnRButtonDown(UINT nFlags, CPoint point);
+    BOOL OnRButtonUp(UINT nFlags, CPoint point);
     BOOL OnSize(UINT nType, int cx, int cy);
     BOOL OpenFile(LPCTSTR lpFileName);
     BOOL SetUINotifier(IUINotifier* pNotifier);
@@ -18,6 +20,7 @@ __interface IUIEventHandler
     BOOL SetRotation(int nAngle);
     BOOL RotationLeft();
     BOOL RotationRight();
+    BOOL Capture(const CPoint& ptLeftTop, const CPoint& ptRightBottom);
 
 };
  

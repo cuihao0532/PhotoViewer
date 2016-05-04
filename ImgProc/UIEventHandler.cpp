@@ -16,6 +16,7 @@ CUIEventHandler::CUIEventHandler(void)
     m_fFitWindowRate = 1.0F;
     m_bFitWindow = true;
     m_nRotationAngle = 0;
+    m_bRButtonDown = false;
     memset(&m_ptLeftTop, 0, sizeof(m_ptLeftTop));
 }
 
@@ -34,6 +35,7 @@ CUIEventHandler::CUIEventHandler(CWnd* pWnd)
     m_bFitWindow = true;
     m_fFitWindowRate = 1.0F;
     m_nRotationAngle = 0;
+    m_bRButtonDown = false;
 
 
     m_pWnd = pWnd; 
@@ -50,23 +52,18 @@ CUIEventHandler::~CUIEventHandler(void)
 
 BOOL CUIEventHandler::OnLButtonDblClk(UINT nFlags, CPoint point)
 {
-    return TRUE;
-
-    LPCTSTR lpFileName = TEXT("E:\\Photos\\gf.JPG");
-
-    if ( !m_Image.IsNull() )
+    if ( m_pUINotifier )
     {
-        m_Image.DestroyImage();
-        return FALSE;
+        m_pUINotifier->SetRectangle(0, 0);
+        m_pUINotifier->RedrawImg();
     }
 
-    if ( !m_Image.LoadImage(lpFileName) ) 
-        return FALSE;
+   
+    CRect rcDest;
+    CRect rcSrc1(100, 100, 200, 200);
+    CRect rcSrc2(150, 150, 250, 250);
 
-    m_pWnd = AfxGetMainWnd();
-    CDC* pDC = m_pWnd->GetDC();
-    m_Image.DrawImage(pDC, 0, 0); 
-    m_pWnd->ReleaseDC(pDC);
+    IntersectRect(&rcDest, &rcSrc1, &rcSrc2);
 
     return TRUE;
 }
@@ -116,10 +113,21 @@ BOOL CUIEventHandler::OnMouseMove(UINT nFlags, CPoint point)
         if ( m_pUINotifier )
         {
             m_pUINotifier->RedrawImg();
-        }
-
-        m_ptCurMouse = point;
+        } 
     }
+
+    if ( m_bRButtonDown )
+    {
+        // 左上角 右下角 形成的举行，画矩形框
+        if ( m_pUINotifier )
+        {
+            m_pUINotifier->SetRectangle(m_ptRButtonDownPos, point);
+            m_pUINotifier->RedrawImg();
+        }
+    }
+
+    // 更新当前鼠标位置
+    m_ptCurMouse = point;
 
     return TRUE; 
 }
@@ -251,6 +259,21 @@ BOOL CUIEventHandler::OnSize(UINT nType, int cx, int cy)
     return TRUE;
 }
 
+BOOL CUIEventHandler::OnRButtonDown(UINT nFlags, CPoint point)
+{
+    m_bRButtonDown = true; 
+    m_ptCurMouse = point; 
+    m_ptRButtonDownPos = point;
+    return TRUE;
+}
+
+BOOL CUIEventHandler::OnRButtonUp(UINT nFlags, CPoint point)
+{
+    m_bRButtonDown = false; 
+    m_ptCurMouse = point;
+    return TRUE;
+}
+
 BOOL CUIEventHandler::OpenFile(LPCTSTR lpFileName)
 { 
     m_Image.DestroyImage();
@@ -294,6 +317,7 @@ BOOL CUIEventHandler::OpenFile(LPCTSTR lpFileName)
 
     if ( m_pUINotifier )
     {
+        m_pUINotifier->SetRectangle(0, 0); 
         m_pUINotifier->SetZoomRate(m_fZoomRate);
         m_pUINotifier->RedrawUI();
     } 
@@ -374,5 +398,30 @@ BOOL CUIEventHandler::RotationRight()
     { 
         m_pUINotifier->RedrawImg();
     }  
+    return TRUE;
+}
+
+BOOL CUIEventHandler::Capture(const CPoint& ptLeftTop, const CPoint& ptRightBottom)
+{
+    if ( m_Image.IsNull() ) return FALSE;
+
+    if ( ptLeftTop == ptRightBottom ) return FALSE;
+
+    CRect rcRectangle(ptLeftTop, ptRightBottom);
+
+    CRect rcImage;
+    rcImage.left = m_ptLeftTop.x;
+    rcImage.top  = m_ptLeftTop.y;
+    rcImage.right = rcImage.left + m_fZoomRate * m_nImgWidth;
+    rcImage.bottom = rcImage.right + m_fZoomRate * m_nImgHeight; 
+
+    CRect rcDest;
+    rcDest.IntersectRect(&rcRectangle, &rcImage);
+
+    if ( rcDest.IsRectEmpty() ) return FALSE;
+
+    // 将rcDest区域的图像保存
+    
+
     return TRUE;
 }

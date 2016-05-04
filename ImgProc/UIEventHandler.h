@@ -19,6 +19,8 @@ public:
     BOOL OnMouseMove(UINT nFlags, CPoint point);
     BOOL OnMouseWheel(UINT nFlags, short zDelta, CPoint pt);
     BOOL OnSize(UINT nType, int cx, int cy); 
+    BOOL OnRButtonDown(UINT nFlags, CPoint point);
+    BOOL OnRButtonUp(UINT nFlags, CPoint point);
     BOOL OpenFile(LPCTSTR lpFileName);
     BOOL SetUINotifier(IUINotifier* pNotifier);
     BOOL SetImgDest(CRect& rect);
@@ -27,6 +29,9 @@ public:
     BOOL SetRotation(int nAngle);
     BOOL RotationLeft();
     BOOL RotationRight();
+    BOOL Capture(const CPoint& ptLeftTop, const CPoint& ptRightBottom);
+
+
 
 protected:
     CGdiPlusImage m_Image;
@@ -44,7 +49,9 @@ protected:
     float m_fZoomRate;              // 缩放比例
 
     bool  m_bLButtonDown;           // 鼠标左键是否按下
-    CPoint m_ptCurMouse;  
+    bool  m_bRButtonDown;           // 鼠标右键是否按下
+    CPoint m_ptCurMouse;            // 鼠标当前位置
+    CPoint m_ptRButtonDownPos;      // 鼠标右键按下时，鼠标的位置
 
     int m_nImgWidth;
     int m_nImgHeight;

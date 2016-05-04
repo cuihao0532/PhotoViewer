@@ -55,6 +55,8 @@ CImgProcDlg::CImgProcDlg(CWnd* pParent /*=NULL*/)
     m_pUIEventHandler = NULL;
     m_nBottomHeight = 50; 
     m_fZoomRate = 1.0F; 
+    memset(&m_ptSelectAreaLeftTop, 0, sizeof(m_ptSelectAreaLeftTop));
+    memset(&m_ptSelectAreaRightBottom, 0, sizeof(m_ptSelectAreaRightBottom));
 	m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
 }
 
@@ -63,6 +65,8 @@ CImgProcDlg::CImgProcDlg(IUIEventHandler* pUIEventHandler, CWnd* pParent /*= NUL
     m_hIcon = AfxGetApp()->LoadIcon(IDR_MAINFRAME);
     m_nBottomHeight = 50; 
     m_fZoomRate = 1.0F; 
+    memset(&m_ptSelectAreaLeftTop, 0, sizeof(m_ptSelectAreaLeftTop));
+    memset(&m_ptSelectAreaRightBottom, 0, sizeof(m_ptSelectAreaRightBottom));  
 }
 
 
@@ -134,6 +138,46 @@ void CImgProcDlg::DrawZoomRate()
     GetDlgItem(IDC_STATIC_ZOOM_RATE)->SetWindowText(m_strZoomRate);  
 }
 
+void CImgProcDlg::DrawRectangle()
+{
+    CDC* pDC = GetDC(); 
+    CRect rcArea(m_ptSelectAreaLeftTop, m_ptSelectAreaRightBottom); 
+
+    /*
+    CRect rcArea(m_ptSelectAreaLeftTop, m_ptSelectAreaRightBottom); 
+    RectF rc(rcArea.left, rcArea.top, rcArea.Width(), rcArea.Height());
+     
+    Bitmap bmp(rc.Width, rc.Height);
+    Graphics* pGraph = Graphics::FromImage(&bmp);
+    Pen pen(Color(45, 62, 92));
+    pGraph->DrawRectangle(&pen, rc); 
+    
+    Graphics graph(pDC->GetSafeHdc());
+    graph.DrawImage(&bmp, 0, 0, (int)rc.Width, (int)rc.Height); 
+
+    delete pGraph;
+    pGraph = NULL; 
+    */
+
+    //CDC bufferDC;
+    //CBitmap ImageBuffer;
+    //bufferDC.CreateCompatibleDC(pDC);
+    //ImageBuffer.CreateCompatibleBitmap(pDC, rcArea.Width(), rcArea.Height()); 
+    //HBITMAP hOldBitmap= (HBITMAP)bufferDC.SelectObject(&ImageBuffer);
+
+     
+ 
+    CPen pen(PS_SOLID, 2, RGB(45, 62, 92));
+    HPEN hOldPen = (HPEN)( pDC->SelectObject(&pen) );
+    HBRUSH hOldBrush = (HBRUSH)( pDC->SelectStockObject(NULL_BRUSH) ); 
+    pDC->Rectangle(rcArea);  
+    pDC->SelectObject(hOldPen);
+    pDC->SelectObject(hOldBrush);
+ 
+    ReleaseDC(pDC);
+    pDC = NULL;
+}
+
 void CImgProcDlg::RedrawUI()
 {
     InvalidateRect(m_rcImgArea); 
@@ -160,6 +204,12 @@ void CImgProcDlg::SetZoomRate(float fRate)
     TCHAR szBuf[20] = { 0 };
     _stprintf(szBuf, TEXT("%.1fx"), fRate); 
     m_strZoomRate = CString(szBuf);
+}
+
+void CImgProcDlg::SetRectangle(const CPoint& ptLeftTop, const CPoint& ptRightBottom)
+{
+    m_ptSelectAreaLeftTop = ptLeftTop;
+    m_ptSelectAreaRightBottom  = ptRightBottom;
 }
 
 // 布局UI
@@ -280,6 +330,7 @@ void CImgProcDlg::OnPaint()
      
    
     DrawImg();
+    DrawRectangle();
     DrawZoomRate(); 
 }
 
@@ -434,35 +485,28 @@ void CImgProcDlg::OnBnClickedBtnZhuanLeft()
 
 void CImgProcDlg::OnBnClickedBtnCutSave()
 {
-    if ( m_Image.IsNull() ) return;
-    
-    //图像保存
-    CLSID Clsid;
-    int nRet = m_Image.GetEncoderClsid(TEXT("image/jpeg"), &Clsid);
-    if ( nRet < 0 )
-        return;
-
-    Bitmap bmp(200, 200); 
-    Graphics* pCanvas = Graphics::FromImage(&bmp);
-    pCanvas->DrawImage(Image::FromFile(m_strFileName), 0, 0, bmp.GetWidth(), bmp.GetHeight());
-    pCanvas->Save();
-    bmp.Save(TEXT("F:\\test.jpg"), &Clsid); 
-     
-    delete pCanvas;
+    if ( m_pUIEventHandler )
+    {
+        m_pUIEventHandler->Capture(m_ptSelectAreaLeftTop, m_ptSelectAreaRightBottom);        
+    } 
 }
 
 
 void CImgProcDlg::OnRButtonDown(UINT nFlags, CPoint point)
-{
-    // TODO: 在此添加消息处理程序代码和/或调用默认值
-
+{ 
     CDialogEx::OnRButtonDown(nFlags, point);
+    if ( m_pUIEventHandler )
+    {
+        m_pUIEventHandler->OnRButtonDown(nFlags, point);
+    }
 }
 
 
 void CImgProcDlg::OnRButtonUp(UINT nFlags, CPoint point)
-{
-    // TODO: 在此添加消息处理程序代码和/或调用默认值
-
+{ 
     CDialogEx::OnRButtonUp(nFlags, point);
+    if ( m_pUIEventHandler )
+    {
+        m_pUIEventHandler->OnRButtonUp(nFlags, point);
+    }
 }

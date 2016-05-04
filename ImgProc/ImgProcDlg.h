@@ -38,13 +38,16 @@ protected:
     CRect m_rcZoomRate;
     CRect m_rcCutSaveBtn;
 
-    int   m_nBottomHeight;   // 底部区域高度
+    int   m_nBottomHeight;             // 底部区域高度
 
     CString m_strFileName;
     CGdiPlusImage m_Image;
     CString m_strZoomRate;
 
     float m_fZoomRate;   
+
+    CPoint m_ptSelectAreaLeftTop;       // 矩形区域的左上角 
+    CPoint m_ptSelectAreaRightBottom;   // 矩形区域的右下角
 
 
 
@@ -55,6 +58,7 @@ protected:
     bool OpenFile(CString& strFileName);
     void DrawImg();
     void DrawZoomRate();
+    void DrawRectangle();
     
 
 
@@ -65,8 +69,8 @@ public:
 
     void SetWindowTitle(LPCTSTR lpTitle);
     void SetZoomRate(LPCTSTR lpZoomRate);
-    void SetZoomRate(float fRate); 
-
+    void SetZoomRate(float fRate);  
+    void SetRectangle(const CPoint& ptLeftTop, const CPoint& ptRightBottom);
 
 
 
