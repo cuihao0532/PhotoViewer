@@ -99,6 +99,7 @@ BEGIN_MESSAGE_MAP(CImgProcDlg, CDialogEx)
     ON_BN_CLICKED(IDC_BTN_CUT_SAVE, &CImgProcDlg::OnBnClickedBtnCutSave)
     ON_WM_RBUTTONDOWN()
     ON_WM_RBUTTONUP()
+    ON_BN_CLICKED(IDC_BTN_SAVE_AS, &CImgProcDlg::OnBnClickedBtnSaveAs)
 END_MESSAGE_MAP()
 
 
@@ -178,20 +179,29 @@ void CImgProcDlg::DrawRectangle()
     pDC = NULL;
 }
 
-void CImgProcDlg::RedrawUI()
+void CImgProcDlg::RedrawUI(BOOL bRedrawRightNow /* = FALSE*/)
 {
     InvalidateRect(m_rcImgArea); 
     InvalidateRect(m_rcZoomRate); 
+
+    if ( bRedrawRightNow )
+    {
+        UpdateWindow();
+    }
 }
 
-void CImgProcDlg::RedrawImg()
+void CImgProcDlg::RedrawImg(BOOL bRedrawRightNow /* = FALSE*/)
 {
     InvalidateRect(m_rcImgArea);
+
+    if ( bRedrawRightNow )
+    {
+        UpdateWindow();
+    }
 }
 
 void CImgProcDlg::SetWindowTitle(LPCTSTR lpTitle)
-{
-
+{ 
 }
 
 void CImgProcDlg::SetZoomRate(LPCTSTR lpZoomRate)
@@ -246,6 +256,10 @@ void CImgProcDlg::LayoutUI()
     m_rcCutSaveBtn.left = m_rcZhuanBtn.right + 20;
     m_rcCutSaveBtn.right = m_rcCutSaveBtn.left + 60;
 
+    m_rcSaveAsBtn = m_rcCutSaveBtn;
+    m_rcSaveAsBtn.left = m_rcCutSaveBtn.right + 20;
+    m_rcSaveAsBtn.right = m_rcSaveAsBtn.left + 60;
+
     m_rcZoomRate = m_rcZhuanBtn;
     m_rcZoomRate.right = rcClient.Width() - 50;
     m_rcZoomRate.left  = m_rcZoomRate.right - 60;
@@ -256,6 +270,7 @@ void CImgProcDlg::LayoutUI()
     GetDlgItem(IDC_BTN_ZHUAN_LEFT)->MoveWindow(m_rcZhuanLeft);
     GetDlgItem(IDC_BTN_ZHUAN_RIGHT)->MoveWindow(m_rcZhuanBtn); 
     GetDlgItem(IDC_BTN_CUT_SAVE)->MoveWindow(m_rcCutSaveBtn);
+    GetDlgItem(IDC_BTN_SAVE_AS)->MoveWindow(m_rcSaveAsBtn);
     
     // 重新为画图区域设置大小
     m_Image.SetDest(m_rcImgArea);
@@ -509,4 +524,22 @@ void CImgProcDlg::OnRButtonUp(UINT nFlags, CPoint point)
     {
         m_pUIEventHandler->OnRButtonUp(nFlags, point);
     }
+}
+
+
+void CImgProcDlg::OnBnClickedBtnSaveAs()
+{
+    BOOL isOpen = FALSE;        //是否打开(否则为保存) 
+    CString strDefaultExt = CString(TEXT("jpg"));
+    CString fileName = CString(TEXT("*.jpg"));         //默认打开的文件名  
+    CString filter = CString(TEXT("文件 (*.jpg)|*.jpg||"));   //文件过虑的类型  
+    CFileDialog openFileDlg(FALSE, strDefaultExt, fileName, OFN_HIDEREADONLY|OFN_OVERWRITEPROMPT, filter, NULL); 
+
+    if ( openFileDlg.DoModal() == IDOK )
+    {
+        if ( m_pUIEventHandler )
+        {
+            m_pUIEventHandler->SaveAs(openFileDlg.GetPathName());
+        }
+    } 
 }

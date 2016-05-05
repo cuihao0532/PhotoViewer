@@ -37,6 +37,7 @@ protected:
     CRect m_rcZhuanLeft;
     CRect m_rcZoomRate;
     CRect m_rcCutSaveBtn;
+    CRect m_rcSaveAsBtn;
 
     int   m_nBottomHeight;             // 底部区域高度
 
@@ -64,8 +65,8 @@ protected:
 
 public:
     // -----------IUINotifier------------------------
-    void RedrawUI();
-    void RedrawImg();
+    void RedrawUI(BOOL bRedrawRightNow = FALSE);
+    void RedrawImg(BOOL bRedrawRightNow = FALSE);
 
     void SetWindowTitle(LPCTSTR lpTitle);
     void SetZoomRate(LPCTSTR lpZoomRate);
@@ -102,4 +103,5 @@ public:
     afx_msg void OnBnClickedBtnCutSave();
     afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
     afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
+    afx_msg void OnBnClickedBtnSaveAs();
 };

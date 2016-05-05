@@ -30,6 +30,7 @@ public:
     BOOL RotationLeft();
     BOOL RotationRight();
     BOOL Capture(const CPoint& ptLeftTop, const CPoint& ptRightBottom);
+    BOOL SaveAs(LPCTSTR lpFileName);
 
 
 
@@ -62,11 +63,10 @@ protected:
 
     float m_fMinZoomRate;        // 最小缩放比例
     float m_fMaxZoomRate;        // 最大缩放比例
-    float m_fFitWindowRate;      // 适应窗口大小时的缩放比例
-
-    bool  m_bFitWindow;          // 图片适应窗口
-
+    float m_fFitWindowRate;      // 适应窗口大小时的缩放比例 
+    bool  m_bFitWindow;          // 图片适应窗口 
     int   m_nRotationAngle;      // 旋转角度
 
+    BOOL  BeginRender(); 
 
 };

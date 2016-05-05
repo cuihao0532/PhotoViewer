@@ -74,15 +74,34 @@ bool CGdiPlusImage::DestroyImage()
 //¼ÓÔØÍ¼Æ¬
 bool CGdiPlusImage::LoadImage(LPCTSTR pszFileName)
 {
-    //¼ÓÔØÅÐ¶Ï
-    ASSERT(m_pImage==NULL);
-    if (m_pImage!=NULL) return false;
+    // ¼ÓÔØÅÐ¶Ï
+    ASSERT(m_pImage == NULL);
+    if (m_pImage != NULL) return false;
 
-    //¼ÓÔØÎÄ¼þ
+    // ¼ÓÔØÎÄ¼þ
     CT2CW strFileName(pszFileName);
-    m_pImage=Image::FromFile((LPCWSTR)strFileName); 
+    m_pImage = Image::FromFile((LPCWSTR)strFileName); 
 
-    //´íÎóÅÐ¶Ï
+    // ´íÎóÅÐ¶Ï
+    if ((m_pImage==NULL)||(m_pImage->GetLastStatus()!=Ok)) 
+    {
+        DestroyImage();
+        return false;
+    }
+
+    return true;
+}
+
+bool CGdiPlusImage::LoadImage(IStream* stream)
+{
+    // ¼ÓÔØÅÐ¶Ï
+    ASSERT(m_pImage == NULL);
+    if (m_pImage != NULL || !stream) return false;
+
+    // ¼ÓÔØÎÄ¼þ 
+    m_pImage = Image::FromStream(stream); 
+
+    // ´íÎóÅÐ¶Ï
     if ((m_pImage==NULL)||(m_pImage->GetLastStatus()!=Ok)) 
     {
         DestroyImage();

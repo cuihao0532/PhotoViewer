@@ -277,52 +277,15 @@ BOOL CUIEventHandler::OnRButtonUp(UINT nFlags, CPoint point)
 BOOL CUIEventHandler::OpenFile(LPCTSTR lpFileName)
 { 
     m_Image.DestroyImage();
-    m_Image.LoadImage(lpFileName);
     m_Image.Reset();
+    BOOL bRet = m_Image.LoadImage(lpFileName); 
     
-    m_bFitWindow = true;
-
-    m_nImgWidth  = m_Image.GetWidth();
-    m_nImgHeight = m_Image.GetHeight(); 
-
-    if ( m_nImgWidth >= m_rcCancasArea.Width() || m_nImgHeight >= m_rcCancasArea.Height() )
+    if ( bRet )
     {
-        float fXRate = 1.0F * m_rcCancasArea.Width() / m_nImgWidth;
-        float fYRate = 1.0F * m_rcCancasArea.Height() / m_nImgHeight;
-
-        m_fZoomRate = min(fXRate, fYRate);
-    }
-    else
-    {
-        m_fZoomRate = 1.0F;
+        bRet = BeginRender(); 
     }
 
-    // 打开图像时失适配窗口的缩放比例
-    m_fFitWindowRate = m_fZoomRate;
-    m_fMinZoomRate   = min(0.6F, m_fFitWindowRate);
-
-    // 求出图像所在的左上角坐标
-    m_ptLeftTop.x = ( m_rcCancasArea.Width() - m_fZoomRate * m_nImgWidth ) / 2;
-    m_ptLeftTop.y = ( m_rcCancasArea.Height() - m_fZoomRate * m_nImgHeight ) / 2; 
-
-    // 图像绘制区域
-    m_rcDrawArea.left = m_ptLeftTop.x;
-    m_rcDrawArea.top = m_ptLeftTop.y;
-    m_rcDrawArea.right = m_rcDrawArea.left + m_fZoomRate * m_nImgWidth;
-    m_rcDrawArea.bottom = m_rcDrawArea.top + m_fZoomRate * m_nImgHeight;
-    
-    // 重置旋转角度为0
-    m_nRotationAngle = 0;
-    m_Image.SetRotation(m_nRotationAngle);
-
-    if ( m_pUINotifier )
-    {
-        m_pUINotifier->SetRectangle(0, 0); 
-        m_pUINotifier->SetZoomRate(m_fZoomRate);
-        m_pUINotifier->RedrawUI();
-    } 
-
-    return TRUE;
+    return bRet;
 }
 
 BOOL CUIEventHandler::SetUINotifier(IUINotifier* pNotifier)
@@ -403,25 +366,122 @@ BOOL CUIEventHandler::RotationRight()
 
 BOOL CUIEventHandler::Capture(const CPoint& ptLeftTop, const CPoint& ptRightBottom)
 {
-    if ( m_Image.IsNull() ) return FALSE;
-
+    if ( m_Image.IsNull() ) return FALSE; 
     if ( ptLeftTop == ptRightBottom ) return FALSE;
 
+    // 矩形选择区域
     CRect rcRectangle(ptLeftTop, ptRightBottom);
 
+    // 图像区域
     CRect rcImage;
     rcImage.left = m_ptLeftTop.x;
     rcImage.top  = m_ptLeftTop.y;
     rcImage.right = rcImage.left + m_fZoomRate * m_nImgWidth;
     rcImage.bottom = rcImage.right + m_fZoomRate * m_nImgHeight; 
 
+    // 选择的矩形区域和图像区域的交集
     CRect rcDest;
     rcDest.IntersectRect(&rcRectangle, &rcImage);
 
+    // 交集为空则不予处理
     if ( rcDest.IsRectEmpty() ) return FALSE;
+     
+    // 把选择的矩形区域边框去除
+    if ( m_pUINotifier )
+    {
+        m_pUINotifier->SetRectangle(0, 0);
+        m_pUINotifier->RedrawImg(TRUE);
+    }
 
-    // 将rcDest区域的图像保存
+    CDC* pDC = m_pWnd->GetDC();
+
+    HDC hDCSrc = pDC->GetSafeHdc();
+    int nBitPerPixel = GetDeviceCaps(hDCSrc, BITSPIXEL);
+    int nWidth = rcDest.Width();
+    int nHeight = rcDest.Height();
     
+    // 把交集部分的图像拷贝至CImage对
+    CImage cImage;
+    cImage.Create(nWidth, nHeight, nBitPerPixel);
+    StretchBlt(cImage.GetDC(), 0, 0, nWidth, nHeight, hDCSrc, rcDest.left, rcDest.top, rcDest.Width(),
+        rcDest.Height(), SRCCOPY);  
+    cImage.ReleaseDC();
+
+    // 释放DC
+    m_pWnd->ReleaseDC(pDC);
+    pDC = NULL;
+
+    // 将二进制图像数据写入流
+    COleStreamFile cImgStream;
+    cImgStream.CreateMemoryStream(NULL);
+    cImage.Save(cImgStream.GetStream(), Gdiplus::ImageFormatBMP);
+
+    // 销毁当前图像
+    m_Image.DestroyImage();
+    // 复位相关参数
+    m_Image.Reset(); 
+    // 从stream加载图像
+    m_Image.LoadImage(cImgStream.GetStream()); 
+    // 开始渲染
+    BeginRender();    
 
     return TRUE;
 }
+
+BOOL CUIEventHandler::SaveAs(LPCTSTR lpFileName)
+{
+    if ( !lpFileName ) return FALSE; 
+    if ( m_Image.IsNull() ) return FALSE;
+
+    m_Image.Save(lpFileName, TEXT("image/jpeg"));  
+
+    return TRUE;
+}
+
+BOOL CUIEventHandler::BeginRender()
+{
+    m_bFitWindow = true;
+    m_nImgWidth  = m_Image.GetWidth();
+    m_nImgHeight = m_Image.GetHeight(); 
+
+    if ( m_nImgWidth >= m_rcCancasArea.Width() || m_nImgHeight >= m_rcCancasArea.Height() )
+    {
+        float fXRate = 1.0F * m_rcCancasArea.Width() / m_nImgWidth;
+        float fYRate = 1.0F * m_rcCancasArea.Height() / m_nImgHeight;
+
+        m_fZoomRate = min(fXRate, fYRate);
+    }
+    else
+    {
+        m_fZoomRate = 1.0F;
+    }
+
+    // 打开图像时失适配窗口的缩放比例
+    m_fFitWindowRate = m_fZoomRate;
+    m_fMinZoomRate   = min(0.6F, m_fFitWindowRate);
+
+    // 求出图像所在的左上角坐标
+    m_ptLeftTop.x = ( m_rcCancasArea.Width() - m_fZoomRate * m_nImgWidth ) / 2;
+    m_ptLeftTop.y = ( m_rcCancasArea.Height() - m_fZoomRate * m_nImgHeight ) / 2; 
+
+    // 图像绘制区域
+    m_rcDrawArea.left = m_ptLeftTop.x;
+    m_rcDrawArea.top = m_ptLeftTop.y;
+    m_rcDrawArea.right = m_rcDrawArea.left + m_fZoomRate * m_nImgWidth;
+    m_rcDrawArea.bottom = m_rcDrawArea.top + m_fZoomRate * m_nImgHeight;
+
+    // 重置旋转角度为0
+    m_nRotationAngle = 0;
+    m_Image.SetRotation(m_nRotationAngle);
+
+    if ( m_pUINotifier )
+    {
+        m_pUINotifier->SetRectangle(0, 0); 
+        m_pUINotifier->SetZoomRate(m_fZoomRate);
+        m_pUINotifier->RedrawUI();
+    } 
+
+    return TRUE;
+}
+
+ 

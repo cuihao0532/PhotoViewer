@@ -49,6 +49,7 @@ public:
     bool DestroyImage();
     //加载图片
     bool LoadImage(LPCTSTR pszFileName);
+    bool LoadImage(IStream* stream);
   
     //功能函数
 public:
