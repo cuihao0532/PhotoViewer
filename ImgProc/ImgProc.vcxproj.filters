@@ -54,6 +54,9 @@
     <ClInclude Include="UINotifier.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="WaitDlg.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ImgProc.cpp">
@@ -72,6 +75,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="PicDlg.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="WaitDlg.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

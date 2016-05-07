@@ -5,6 +5,7 @@
 #include "GdiPlusImage.h"
 #include "PicDlg.h"
 #include "UINotifier.h"
+#include "WaitDlg.h"
 #pragma once
 
 
@@ -38,6 +39,7 @@ protected:
     CRect m_rcZoomRate;
     CRect m_rcCutSaveBtn;
     CRect m_rcSaveAsBtn;
+    CRect m_rcRecLineBtn;
 
     int   m_nBottomHeight;             // 底部区域高度
 
@@ -50,6 +52,10 @@ protected:
     CPoint m_ptSelectAreaLeftTop;       // 矩形区域的左上角 
     CPoint m_ptSelectAreaRightBottom;   // 矩形区域的右下角
 
+    vector<CPoint> m_vecPoints;
+    vector< vector<CPoint> > m_vvecPoints;
+
+    CWaitDlg* m_pWaitDlg;
 
 
     
@@ -60,7 +66,10 @@ protected:
     void DrawImg();
     void DrawZoomRate();
     void DrawRectangle();
+    void DrawRecLine();
     
+
+    void ShowWaitUI(BOOL bShow = TRUE);
 
 
 public:
@@ -72,6 +81,8 @@ public:
     void SetZoomRate(LPCTSTR lpZoomRate);
     void SetZoomRate(float fRate);  
     void SetRectangle(const CPoint& ptLeftTop, const CPoint& ptRightBottom);
+    void SetRecLines( std::vector< std::vector<CPoint> >& vvecPoints);
+    void ShowWaitDlg(BOOL bShow = TRUE ); 
 
 
 
@@ -104,4 +115,6 @@ public:
     afx_msg void OnRButtonDown(UINT nFlags, CPoint point);
     afx_msg void OnRButtonUp(UINT nFlags, CPoint point);
     afx_msg void OnBnClickedBtnSaveAs();
+    afx_msg void OnBnClickedBtnRecLine();
+    virtual BOOL PreTranslateMessage(MSG* pMsg);
 };

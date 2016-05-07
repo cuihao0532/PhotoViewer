@@ -2,6 +2,65 @@
 #include "eventhanlders.h"
 #include "GdiPlusImage.h"
 #include "UINotifier.h"
+#include <vector>
+#include <map>
+#include <algorithm>
+using namespace std;
+
+
+
+struct TheLine
+{
+    float rho;
+    float angle;
+};
+
+
+struct Index2Num
+{
+    Index2Num(int n, int c) : index(n), count(c)
+    { 
+    }
+
+    Index2Num()
+    {
+        memset(this, 0, sizeof(*this));
+    }
+
+    int index;
+    int count; 
+
+    bool operator<(const Index2Num& obj) const
+    {
+        if ( this->count < obj.count )
+            return true;
+
+        return false;
+    }
+
+    bool operator>(const Index2Num& obj) const
+    {
+        if ( this->count > obj.count )
+            return true;
+
+        return false;
+    }
+
+};
+
+typedef union
+{
+    ARGB Color;
+    struct
+    {
+        BYTE Blue;
+        BYTE Green;
+        BYTE Red;
+        BYTE Alpha;
+    };
+}ARGBQuad, *PARGBQuad;
+
+
 
 class CUIEventHandler :
     public IUIEventHandler
@@ -31,7 +90,10 @@ public:
     BOOL RotationRight();
     BOOL Capture(const CPoint& ptLeftTop, const CPoint& ptRightBottom);
     BOOL SaveAs(LPCTSTR lpFileName);
+    BOOL RecLine();
 
+
+    friend unsigned int __stdcall RecLineThread(void* p);
 
 
 protected:
@@ -67,6 +129,20 @@ protected:
     bool  m_bFitWindow;          // 图片适应窗口 
     int   m_nRotationAngle;      // 旋转角度
 
-    BOOL  BeginRender(); 
+
+ 
+
+    BOOL   BeginRender(); 
+    double Round(double val);
+    void   Gray(BitmapData *data);
+    void   GrayAnd2Values(BitmapData *data, BYTE threshold);
+    void   LockBitmap(Gdiplus::Bitmap *bmp, BitmapData *data);
+    void   UnlockBitmap(Gdiplus::Bitmap *bmp, BitmapData *data);
+    void CUIEventHandler::Hough(
+        Bitmap* pImg, float rho, float theta, int threshold, 
+        std::vector<TheLine>& vecLines, int linesMax);
+
+    
+
 
 };

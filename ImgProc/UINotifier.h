@@ -1,4 +1,7 @@
 
+#include <vector>
+using std::vector;
+
 #pragma once
 
 __interface IUINotifier
@@ -16,4 +19,7 @@ __interface IUINotifier
     // 设置选择的矩形区域
     void SetRectangle(const CPoint& ptLeftTop, const CPoint& ptRightBottom);
 
+    void SetRecLines( std::vector< std::vector<CPoint> >& );
+
+    void ShowWaitDlg(BOOL bShow = TRUE ); 
 };

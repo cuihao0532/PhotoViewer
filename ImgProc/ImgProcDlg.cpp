@@ -100,6 +100,7 @@ BEGIN_MESSAGE_MAP(CImgProcDlg, CDialogEx)
     ON_WM_RBUTTONDOWN()
     ON_WM_RBUTTONUP()
     ON_BN_CLICKED(IDC_BTN_SAVE_AS, &CImgProcDlg::OnBnClickedBtnSaveAs)
+    ON_BN_CLICKED(IDC_BTN_REC_LINE, &CImgProcDlg::OnBnClickedBtnRecLine)
 END_MESSAGE_MAP()
 
 
@@ -179,6 +180,49 @@ void CImgProcDlg::DrawRectangle()
     pDC = NULL;
 }
 
+void CImgProcDlg::DrawRecLine()
+{ 
+    return;
+
+    CDC* pDC = GetDC();
+
+    for ( int i = 0; i < m_vvecPoints.size(); ++ i )
+    {
+        int nCount = m_vvecPoints[i].size();
+        CPoint* pts = new CPoint[ nCount ]; 
+
+        for ( int j = 0; j < nCount; ++ j )
+        {
+            pts[ j ] = m_vvecPoints[ i ][ j ];  
+        }
+
+        pDC->Polygon(pts, nCount);    
+
+        delete[] pts;
+        pts = NULL;
+    }
+
+    ReleaseDC(pDC);
+    pDC = NULL;
+
+}
+
+void CImgProcDlg::ShowWaitUI(BOOL bShow /*= TRUE*/)
+{
+    if ( m_pWaitDlg )
+    {
+        if ( bShow )
+        {
+            m_pWaitDlg->ShowWindow(SW_SHOW);
+        }
+        else
+        {
+            m_pWaitDlg->ShowWindow(SW_HIDE);
+        }
+    }
+
+}
+
 void CImgProcDlg::RedrawUI(BOOL bRedrawRightNow /* = FALSE*/)
 {
     InvalidateRect(m_rcImgArea); 
@@ -222,6 +266,22 @@ void CImgProcDlg::SetRectangle(const CPoint& ptLeftTop, const CPoint& ptRightBot
     m_ptSelectAreaRightBottom  = ptRightBottom;
 }
 
+void CImgProcDlg::SetRecLines(std::vector< std::vector<CPoint> >& vvecPoints)
+{
+    for ( int i = 0; i < m_vvecPoints.size(); ++ i )
+    {
+        m_vvecPoints[i].clear();
+    } 
+    m_vvecPoints.clear(); 
+    m_vvecPoints.assign(vvecPoints.begin(), vvecPoints.end());
+}
+
+void CImgProcDlg::ShowWaitDlg(BOOL bShow /*= TRUE */)
+{
+    ShowWaitUI(bShow);
+
+}
+ 
 // 布局UI
 void CImgProcDlg::LayoutUI()
 {
@@ -260,9 +320,14 @@ void CImgProcDlg::LayoutUI()
     m_rcSaveAsBtn.left = m_rcCutSaveBtn.right + 20;
     m_rcSaveAsBtn.right = m_rcSaveAsBtn.left + 60;
 
+    m_rcRecLineBtn = m_rcSaveAsBtn;
+    m_rcRecLineBtn.left = m_rcSaveAsBtn.right + 20;
+    m_rcRecLineBtn.right = m_rcRecLineBtn.left + 60;
+
     m_rcZoomRate = m_rcZhuanBtn;
     m_rcZoomRate.right = rcClient.Width() - 50;
     m_rcZoomRate.left  = m_rcZoomRate.right - 60;
+
      
     GetDlgItem(IDC_STATIC_PIC)->MoveWindow(m_rcImgArea); 
     GetDlgItem(IDC_STATIC_ZOOM_RATE)->MoveWindow(m_rcZoomRate);
@@ -271,6 +336,7 @@ void CImgProcDlg::LayoutUI()
     GetDlgItem(IDC_BTN_ZHUAN_RIGHT)->MoveWindow(m_rcZhuanBtn); 
     GetDlgItem(IDC_BTN_CUT_SAVE)->MoveWindow(m_rcCutSaveBtn);
     GetDlgItem(IDC_BTN_SAVE_AS)->MoveWindow(m_rcSaveAsBtn);
+    GetDlgItem(IDC_BTN_REC_LINE)->MoveWindow(m_rcRecLineBtn);
     
     // 重新为画图区域设置大小
     m_Image.SetDest(m_rcImgArea);
@@ -303,6 +369,9 @@ BOOL CImgProcDlg::OnInitDialog()
      
 	// TODO: 在此添加额外的初始化代码
     LayoutUI();
+
+    m_pWaitDlg = new CWaitDlg;
+    m_pWaitDlg->Create(IDD_WAITDLG, this);
 	return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
 
@@ -346,6 +415,7 @@ void CImgProcDlg::OnPaint()
    
     DrawImg();
     DrawRectangle();
+    DrawRecLine();
     DrawZoomRate(); 
 }
 
@@ -542,4 +612,26 @@ void CImgProcDlg::OnBnClickedBtnSaveAs()
             m_pUIEventHandler->SaveAs(openFileDlg.GetPathName());
         }
     } 
+}
+
+
+void CImgProcDlg::OnBnClickedBtnRecLine()
+{
+    if ( m_pUIEventHandler )
+    {
+        m_pUIEventHandler->RecLine();
+    }
+}
+
+
+BOOL CImgProcDlg::PreTranslateMessage(MSG* pMsg)
+{
+    // TODO: 在此添加专用代码和/或调用基类
+
+    //屏蔽ESC关闭窗体/
+    if(pMsg->message==WM_KEYDOWN && pMsg->wParam==VK_ESCAPE ) return TRUE;
+
+    if(pMsg->message==WM_KEYDOWN && pMsg->wParam==VK_RETURN && pMsg->wParam) return TRUE;
+    else
+        return CDialog::PreTranslateMessage(pMsg);  
 }

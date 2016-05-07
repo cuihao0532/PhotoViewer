@@ -1,5 +1,6 @@
 #include "StdAfx.h"
 #include "UIEventHandler.h"
+#include <math.h>
 
 
 CUIEventHandler::CUIEventHandler(void)
@@ -277,9 +278,9 @@ BOOL CUIEventHandler::OnRButtonUp(UINT nFlags, CPoint point)
 BOOL CUIEventHandler::OpenFile(LPCTSTR lpFileName)
 { 
     m_Image.DestroyImage();
-    m_Image.Reset();
+    m_Image.Reset(); 
     BOOL bRet = m_Image.LoadImage(lpFileName); 
-    
+
     if ( bRet )
     {
         bRet = BeginRender(); 
@@ -438,6 +439,82 @@ BOOL CUIEventHandler::SaveAs(LPCTSTR lpFileName)
     return TRUE;
 }
 
+BOOL CUIEventHandler::RecLine()
+{
+    if ( m_Image.IsNull() ) return FALSE;
+
+    if ( m_pUINotifier )
+    {
+        m_pUINotifier->ShowWaitDlg();
+    }
+
+    HANDLE hThread = (HANDLE)_beginthreadex(
+        NULL,
+        0,
+        RecLineThread,
+        this,
+        0,
+        NULL);
+
+    if ( hThread == INVALID_HANDLE_VALUE || !hThread )
+    {
+        if ( m_pUINotifier )
+        {
+            m_pUINotifier->ShowWaitDlg(FALSE);
+        }
+    }
+
+#if 0
+    int width = m_Image.GetWidth(); 
+    int height = m_Image.GetHeight();
+
+    Bitmap* img;
+    img = new Bitmap(width, height,PixelFormat32bppRGB);
+    Graphics gr(img);
+    
+    gr.SetInterpolationMode(InterpolationModeHighQuality);
+    gr.DrawImage(m_Image.GetImgObj(), 0, 0, width, height); 
+
+    std::vector<TheLine> vecLines;
+    Hough(img, 1, 3.1415926 / 10, 100, vecLines, 10); 
+
+    delete img;
+    img = NULL;
+#endif
+
+    return TRUE;
+}
+
+unsigned int __stdcall RecLineThread(void* p)
+{
+    CUIEventHandler* pThis = (CUIEventHandler*)p;
+
+    if ( !pThis ) return 0; 
+
+    int width = pThis->m_Image.GetWidth(); 
+    int height = pThis->m_Image.GetHeight();
+
+    Bitmap* img;
+    img = new Bitmap(width, height,PixelFormat32bppRGB);
+    Graphics gr(img);
+
+    gr.SetInterpolationMode(InterpolationModeHighQuality);
+    gr.DrawImage(pThis->m_Image.GetImgObj(), 0, 0, width, height); 
+
+    std::vector<TheLine> vecLines;
+    pThis->Hough(img, 1, 3.1415926 / 10, 100, vecLines, 10); 
+
+    delete img;
+    img = NULL;
+
+    if ( pThis->m_pUINotifier )
+    {
+        pThis->m_pUINotifier->ShowWaitDlg(FALSE);
+    }
+    
+    return 0;
+}
+
 BOOL CUIEventHandler::BeginRender()
 {
     m_bFitWindow = true;
@@ -485,3 +562,219 @@ BOOL CUIEventHandler::BeginRender()
 }
 
  
+
+
+double CUIEventHandler::Round(double val)
+{
+    return (val> 0.0) ? floor(val+ 0.5) : ceil(val- 0.5);
+}
+
+
+
+void CUIEventHandler::Gray(BitmapData *data)
+{
+    PARGBQuad p = (PARGBQuad)data->Scan0;
+    INT offset = data->Stride - data->Width * sizeof(ARGBQuad);
+
+    for (UINT y = 0; y < data->Height; y ++ )
+    {
+        for (UINT x = 0; x < data->Width; x ++, p ++)
+        {
+            p->Blue = p->Green = p->Red =
+                (UINT)(p->Blue * 29 + p->Green * 150 + p->Red * 77 + 128) >> 8;
+
+        }
+
+        BYTE* pt = (BYTE*)p + offset;
+        p = (PARGBQuad)pt;
+    }
+}
+
+
+void CUIEventHandler::GrayAnd2Values(BitmapData *data, BYTE threshold)
+{
+    PARGBQuad p = (PARGBQuad)data->Scan0;
+    INT offset = data->Stride - data->Width * sizeof(ARGBQuad); 
+
+    for (UINT y = 0; y < data->Height; y ++ )
+    {
+        for (UINT x = 0; x < data->Width; x ++, p ++)
+        {
+            if (((p->Blue * 29 + p->Green * 150 + p->Red * 77 + 128) >> 8) < threshold)
+                p->Color &= 0xff000000;
+            else
+                p->Color |= 0x00ffffff; 
+        }
+
+        BYTE* pt = (BYTE*)p + offset;
+        p = (PARGBQuad)pt;
+    }
+}
+
+
+void CUIEventHandler::LockBitmap(Gdiplus::Bitmap *bmp, BitmapData *data)
+{
+    Gdiplus::Rect r(0, 0, bmp->GetWidth(), bmp->GetHeight());
+    bmp->LockBits(&r, ImageLockModeRead | ImageLockModeWrite,
+        PixelFormat32bppARGB, data);
+}
+
+void CUIEventHandler::UnlockBitmap(Gdiplus::Bitmap *bmp, BitmapData *data)
+{
+    bmp->UnlockBits(data);
+}
+
+
+
+void CUIEventHandler::Hough(
+    Bitmap* pImg, float rho, float theta, int threshold, 
+    std::vector<TheLine>& vecLines, int linesMax)
+{
+    BitmapData data;
+    LockBitmap(pImg, &data);  
+    GrayAnd2Values(&data, 128); 
+
+    PARGBQuad p = (PARGBQuad)(data.Scan0); 
+    INT offset = data.Stride - data.Width * sizeof(ARGBQuad);
+
+    int width = pImg->GetWidth();
+    int height = pImg->GetHeight();
+    int total = 0;
+    float ang;
+    int r, n;
+    float irho = 1 / rho;
+    double scale;
+    int step = 1;
+    double pi = 3.1415926; 
+
+    int numangle = pi / theta;
+    int numrho = ( ( width + height ) * 2 + 1 ) / rho;
+
+    int* accum = new int[ (numangle + 2) * (numrho + 2)]();
+    int* sort_buf = new int[ numangle * numrho ]();
+    float* tabSin = new float[numangle]();
+    float* tabCos = new float[numangle]();
+
+    std::map<int, vector<CPoint> > mp_pts;
+
+    for( ang = 0, n = 0; n < numangle; ang += theta, n++ ) // 计算正弦曲线的准备工作，查表
+    { 
+        tabSin[n] = (float)(sin(ang) * irho);
+        tabCos[n] = (float)(cos(ang) * irho);
+    }
+
+    // stage 1. fill accumulator
+    for( int i = 0; i < height; i++ )
+    {
+        for( int j = 0; j < width; j++, p++ )
+        { 
+            // 将每个非零点，转换为霍夫空间的离散正弦曲线，并统计。
+            if ( p->Red != 0 && p->Green != 0 && p->Blue != 0 ) 
+            {
+                for( n = 0; n < numangle; n++ )
+                {
+                    r = Round(j * tabCos[n] + i * tabSin[n]);
+                    r += (numrho - 1) / 2;
+
+                    int nKey = (n + 1) * (numrho+2) + r + 1; 
+                    accum[nKey]++;  
+
+                    if ( mp_pts.end() == mp_pts.find(nKey) )
+                    {
+                        vector<CPoint> pts;
+                        mp_pts[ nKey ] = pts;
+                    }
+                    else
+                    {
+                        mp_pts[nKey].push_back(CPoint(j, i));
+                    }
+
+                }
+            } 
+
+        }
+
+        BYTE* pt = (BYTE*)p + offset;
+        p = (PARGBQuad)pt;
+    } 
+
+
+    std::vector<Index2Num> vecIndex;
+
+    for( int r = 0; r < numrho; r++ )   
+    {
+        for( int n = 0; n < numangle; n++ )
+        {
+            int base = (n+1) * (numrho+2) + r+1;
+            if( accum[base] > threshold &&
+                accum[base] > accum[base - 1] && accum[base] >= accum[base + 1] &&
+                accum[base] > accum[base - numrho - 2] && accum[base] >= accum[base + numrho + 2] )
+            {
+                sort_buf[total++] = base;
+
+                Index2Num obj;
+                obj.index = base;
+                obj.count = accum[ base ];
+
+                vecIndex.push_back(obj);                
+            }
+        }
+    } 
+
+
+    std::sort(vecIndex.begin(), vecIndex.end(), greater<Index2Num>());
+
+    // sort_buf中存放index
+    // 所有index中对应的accum[ index ]值没有序
+    // 需要按照accum[ index ]降序排列，并按照降序后的结果，也对sort_buf降序，不改变accum 
+    // stage 4. store the first min(total,linesMax) lines to the output buffer
+    linesMax = min(linesMax, total);
+    linesMax = min(vecIndex.size(), linesMax);
+
+    scale = 1./(numrho+2);
+    for( int i = 0; i < linesMax; i++ )  // 依据霍夫空间分辨率，计算直线的实际r，theta参数
+    {
+        TheLine line;
+        int idx = vecIndex[i].index;
+        int n = floor(idx * scale) - 1;
+        int r = idx - (n + 1) * (numrho + 2) - 1;
+        line.rho = (r - (numrho - 1) * 0.5f) * rho;
+        line.angle = n * theta; 
+        vecLines.push_back(line); 
+    }
+
+    UnlockBitmap(pImg, &data);
+
+    delete[] accum;
+    delete[] sort_buf;
+    delete[] tabSin;
+    delete[] tabCos; 
+
+    vector<Point> vecPoints;
+    vector< vector<Point> > vvecPoints;
+
+    for ( int i = 0; i < linesMax; ++ i )
+    {
+        CString str;
+        auto at = mp_pts[ vecIndex[i].index ]; 
+
+        for ( int i = 0; i < at.size(); ++ i )
+        {
+            TCHAR szBuf[100] = { 0 };
+            _stprintf(szBuf, TEXT("(%d, %d)"), at[i].x, at[i].y); 
+            str += CString(szBuf);
+            str += CString(TEXT(", "));
+             
+            vecPoints.push_back(Point(at[ i ].x, at[ i ].y));
+        }
+         
+        vvecPoints.push_back(vecPoints);  
+    }
+
+    m_Image.SetRecLines(vvecPoints);
+    if ( m_pUINotifier )
+    { 
+        m_pUINotifier->RedrawImg();
+    } 
+
+}

@@ -62,7 +62,7 @@ INT CGdiPlusImage::GetHeight()
 bool CGdiPlusImage::DestroyImage()
 {
     //删除对象
-    if (m_pImage!=NULL) 
+    if ( m_pImage!=NULL ) 
     { 
         delete m_pImage;
         m_pImage = NULL;
@@ -311,7 +311,7 @@ bool CGdiPlusImage::DrawImage(CDC* pDC, CRect& rcDraw, CRect& rcCanvas)
 
     SolidBrush bgbrush(Color(238, 243, 250));
     pGraphics->FillRectangle(&bgbrush, 0, 0, rcCanvas.Width(), rcCanvas.Height());
-
+     
     if ( m_pImage )
     {
         //获取属性 
@@ -331,19 +331,43 @@ bool CGdiPlusImage::DrawImage(CDC* pDC, CRect& rcDraw, CRect& rcCanvas)
         rcDrawRect.Width = rcDraw.Width();
         rcDrawRect.Height = rcDraw.Height(); 
 
+        //Point pts[ ] = { Point(10 + rcDraw.left, 10 + rcDraw.top), Point(50 + rcDraw.left, 50 + rcDraw.top), Point(100 + rcDraw.left, 500 + rcDraw.top) };
+        Pen pen(Color(255, 0, 0), 2); 
+
         Matrix mtr;
         mtr.Translate(rcDrawRect.X + rcDrawRect.Width / 2, rcDrawRect.Y + rcDrawRect.Height / 2);
         mtr.Rotate(m_nRotateAngle);
         mtr.Translate(-(rcDrawRect.X + rcDrawRect.Width / 2), -(rcDrawRect.Y + rcDrawRect.Height / 2));
 
-        pGraphics->SetTransform(&mtr);
+        pGraphics->SetTransform(&mtr); 
 
         //绘画图像 
-        //pGraphics->DrawImage(m_pImage, rcDrawRect, nXSrc, nYSrc, (REAL)nImageWidth - nXSrc * 2, (REAL)nImageHeight - nYSrc * 2, UnitPixel,&Attributes);  
         pGraphics->DrawImage(
             m_pImage, rcDrawRect,
             nXSrc, nYSrc,
             (REAL)nImageWidth - nXSrc * 2, (REAL)nImageHeight - nYSrc * 2, UnitPixel);  
+         
+
+        for ( int i = 0; i < m_vvecPoints.size(); ++ i )
+        {
+            int nCount = m_vvecPoints[i].size(); 
+            Point *pts = new Point[nCount];
+
+            for ( int j = 0; j < nCount; ++ j )
+            {
+                pts[ j ] = m_vvecPoints[ i ][ j ]; 
+                pts[ j ].X += rcDraw.left;
+                pts[ j ].Y += rcDraw.top;
+
+            } 
+          
+            pGraphics->DrawLines(&pen, pts, nCount);
+
+            delete[] pts;
+            pts = NULL;
+        }
+
+
         pGraphics->ResetTransform();   
         //pGraphics->EndContainer(Containter);
 
@@ -377,12 +401,43 @@ void CGdiPlusImage::Reset()
     m_szZoom.cx = m_szZoom.cy = 1.0f;
     m_nRotateAngle = 0; 
     m_fZoomRate = 1.0F; 
+
+    ClearRecLines();
 }
 
 void CGdiPlusImage::MoveTo(POINT& point)
 { 
     m_ptLeftTop.x += point.x;
     m_ptLeftTop.y += point.y; 
+}
+
+Image* CGdiPlusImage::GetImgObj()
+{
+    if ( this->IsNull() )
+    {
+        return NULL;
+    }
+
+    return m_pImage;
+}
+
+void CGdiPlusImage::SetRecLines(std::vector< std::vector<Point> >& vvecPoints)
+{
+    for ( int i = 0; i < m_vvecPoints.size(); ++ i )
+    {
+        m_vvecPoints[i].clear();
+    } 
+    m_vvecPoints.clear(); 
+    m_vvecPoints.assign(vvecPoints.begin(), vvecPoints.end());
+}
+
+void CGdiPlusImage::ClearRecLines()
+{
+    for ( int i = 0; i < m_vvecPoints.size(); ++ i )
+    {
+        m_vvecPoints[i].clear();
+    } 
+    m_vvecPoints.clear(); 
 }
 
 void CGdiPlusImage::SetRotation( int nAngle)

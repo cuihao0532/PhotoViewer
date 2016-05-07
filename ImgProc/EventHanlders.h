@@ -22,6 +22,7 @@ __interface IUIEventHandler
     BOOL RotationRight();
     BOOL Capture(const CPoint& ptLeftTop, const CPoint& ptRightBottom);
     BOOL SaveAs(LPCTSTR lpFileName);
+    BOOL RecLine();
 
 };
- 
+

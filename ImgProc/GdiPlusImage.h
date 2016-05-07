@@ -2,6 +2,8 @@
   
 #include <GdiPlus.h>
 using namespace Gdiplus; 
+#include <vector>
+using std::vector;
 
 typedef struct tagSize
 {
@@ -25,6 +27,9 @@ protected:
     int                             m_nShowWidth;                       // 显示宽度
     int                             m_nShowHeight;                      // 显示高度
     bool                            m_bOpenNewImg;                      // 是否打开新图像
+    vector<Point> m_vecPoints;
+    vector< vector<Point> > m_vvecPoints;
+
 
   
     //函数定义
@@ -75,6 +80,10 @@ public:
     void SetDest(CRect& rect);
     void Reset();
     void MoveTo(POINT& point);
+
+    Image* GetImgObj();
+    void SetRecLines(std::vector< std::vector<Point> >& vvecPoints);
+    void ClearRecLines();
 
     int m_nXPos;
     int m_nYPos; 
