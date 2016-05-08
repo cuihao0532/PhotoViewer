@@ -333,6 +333,8 @@ BOOL CUIEventHandler::SetRotation(int nAngle)
     { 
         m_pUINotifier->RedrawImg();
     }  
+
+    return TRUE;
 }
 
 BOOL CUIEventHandler::RotationLeft()
