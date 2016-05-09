@@ -108,11 +108,12 @@ END_MESSAGE_MAP()
 
 bool CImgProcDlg::OpenFile(CString& strFileName)
 {  
-    CFileDialog dlg(TRUE, //TRUE为OPEN对话框，FALSE为SAVE AS对话框
+    CFileDialog dlg(
+        TRUE,  
         NULL, 
         NULL,
-        OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT,
-        (LPCTSTR)_TEXT("JPG Files (*.jpg)|*.jpg|All Files (*.*)|*.*||"),
+        OFN_HIDEREADONLY | OFN_OVERWRITEPROMPT, 
+        (LPCTSTR)_TEXT("All Files (*.*)|*.*|*.jpg|JPG Files (*.jpg)||"), 
         NULL);
     if (dlg.DoModal() == IDOK)
     {
@@ -181,30 +182,7 @@ void CImgProcDlg::DrawRectangle()
 }
 
 void CImgProcDlg::DrawRecLine()
-{ 
-    return;
-
-    CDC* pDC = GetDC();
-
-    for ( int i = 0; i < m_vvecPoints.size(); ++ i )
-    {
-        int nCount = m_vvecPoints[i].size();
-        CPoint* pts = new CPoint[ nCount ]; 
-
-        for ( int j = 0; j < nCount; ++ j )
-        {
-            pts[ j ] = m_vvecPoints[ i ][ j ];  
-        }
-
-        pDC->Polygon(pts, nCount);    
-
-        delete[] pts;
-        pts = NULL;
-    }
-
-    ReleaseDC(pDC);
-    pDC = NULL;
-
+{  
 }
 
 void CImgProcDlg::ShowWaitUI(BOOL bShow /*= TRUE*/)
@@ -625,9 +603,7 @@ void CImgProcDlg::OnBnClickedBtnRecLine()
 
 
 BOOL CImgProcDlg::PreTranslateMessage(MSG* pMsg)
-{
-    // TODO: 在此添加专用代码和/或调用基类
-
+{ 
     //屏蔽ESC关闭窗体/
     if(pMsg->message==WM_KEYDOWN && pMsg->wParam==VK_ESCAPE ) return TRUE;
 

@@ -478,7 +478,7 @@ BOOL CUIEventHandler::RecLine()
     gr.DrawImage(m_Image.GetImgObj(), 0, 0, width, height); 
 
     std::vector<TheLine> vecLines;
-    Hough(img, 1, 3.1415926 / 10, 100, vecLines, 10); 
+    Hough(img, 1, PI / 10, 100, vecLines, 10); 
 
     delete img;
     img = NULL;
@@ -504,7 +504,8 @@ unsigned int __stdcall RecLineThread(void* p)
     gr.DrawImage(pThis->m_Image.GetImgObj(), 0, 0, width, height); 
 
     std::vector<TheLine> vecLines;
-    pThis->Hough(img, 1, 3.1415926 / 10, 100, vecLines, 10); 
+    
+    pThis->Hough(img, 1, PI / 360, 50, vecLines, 10); 
 
     delete img;
     img = NULL;
@@ -606,6 +607,12 @@ void CUIEventHandler::GrayAnd2Values(BitmapData *data, BYTE threshold)
                 p->Color &= 0xff000000;
             else
                 p->Color |= 0x00ffffff; 
+
+            int blue = p->Blue;
+            int green = p->Green;
+            int red = p->Red;
+            int alpha = p->Alpha;
+            int m;
         }
 
         BYTE* pt = (BYTE*)p + offset;
@@ -644,12 +651,11 @@ void CUIEventHandler::Hough(
     int total = 0;
     float ang;
     int r, n;
-    float irho = 1 / rho;
+    float irho = 1.0F / rho;
     double scale;
-    int step = 1;
-    double pi = 3.1415926; 
+    int step = 1; 
 
-    int numangle = pi / theta;
+    int numangle = PI / theta;
     int numrho = ( ( width + height ) * 2 + 1 ) / rho;
 
     int* accum = new int[ (numangle + 2) * (numrho + 2)]();
@@ -657,7 +663,7 @@ void CUIEventHandler::Hough(
     float* tabSin = new float[numangle]();
     float* tabCos = new float[numangle]();
 
-    std::map<int, vector<CPoint> > mp_pts;
+    std::map<int, vector<CPoint> > mp_pts; 
 
     for( ang = 0, n = 0; n < numangle; ang += theta, n++ ) // 计算正弦曲线的准备工作，查表
     { 
@@ -665,11 +671,18 @@ void CUIEventHandler::Hough(
         tabCos[n] = (float)(cos(ang) * irho);
     }
 
+
+    TCHAR szOutput[ 100 ] = { 0 };
+    _stprintf(szOutput, TEXT("height = %d, width = %d"), height, width);
+    OutputDebugString(szOutput);
+ 
+    DWORD dw1 = GetTickCount();
+
     // stage 1. fill accumulator
     for( int i = 0; i < height; i++ )
     {
         for( int j = 0; j < width; j++, p++ )
-        { 
+        {  
             // 将每个非零点，转换为霍夫空间的离散正弦曲线，并统计。
             if ( p->Red != 0 && p->Green != 0 && p->Blue != 0 ) 
             {
@@ -678,27 +691,36 @@ void CUIEventHandler::Hough(
                     r = Round(j * tabCos[n] + i * tabSin[n]);
                     r += (numrho - 1) / 2;
 
-                    int nKey = (n + 1) * (numrho+2) + r + 1; 
+                    int nKey = (n + 1) * (numrho + 2) + r + 1; 
                     accum[nKey]++;  
 
                     if ( mp_pts.end() == mp_pts.find(nKey) )
                     {
                         vector<CPoint> pts;
+                        pts.push_back(CPoint(j, i));
                         mp_pts[ nKey ] = pts;
+
+                        mp_pts[ nKey ].reserve(600);
                     }
                     else
                     {
+                        
                         mp_pts[nKey].push_back(CPoint(j, i));
                     }
 
-                }
-            } 
+                } // for
+            } // if
 
         }
+
+        memset(szOutput, 0, sizeof(szOutput));
+        _stprintf(szOutput, TEXT("i = %d\r\n"), i);
+        OutputDebugString(szOutput);
 
         BYTE* pt = (BYTE*)p + offset;
         p = (PARGBQuad)pt;
     } 
+
 
 
     std::vector<Index2Num> vecIndex;
@@ -707,8 +729,8 @@ void CUIEventHandler::Hough(
     {
         for( int n = 0; n < numangle; n++ )
         {
-            int base = (n+1) * (numrho+2) + r+1;
-            if( accum[base] > threshold &&
+            int base = (n + 1) * (numrho + 2) + r + 1;
+            if ( accum[base] > threshold &&
                 accum[base] > accum[base - 1] && accum[base] >= accum[base + 1] &&
                 accum[base] > accum[base - numrho - 2] && accum[base] >= accum[base + numrho + 2] )
             {
@@ -723,7 +745,7 @@ void CUIEventHandler::Hough(
         }
     } 
 
-
+    // 按照点个数 增序排列
     std::sort(vecIndex.begin(), vecIndex.end(), greater<Index2Num>());
 
     // sort_buf中存放index
@@ -733,7 +755,7 @@ void CUIEventHandler::Hough(
     linesMax = min(linesMax, total);
     linesMax = min(vecIndex.size(), linesMax);
 
-    scale = 1./(numrho+2);
+    scale = 1.0 / (numrho + 2);
     for( int i = 0; i < linesMax; i++ )  // 依据霍夫空间分辨率，计算直线的实际r，theta参数
     {
         TheLine line;
@@ -752,22 +774,24 @@ void CUIEventHandler::Hough(
     delete[] tabSin;
     delete[] tabCos; 
 
-    vector<Point> vecPoints;
     vector< vector<Point> > vvecPoints;
 
     for ( int i = 0; i < linesMax; ++ i )
     {
         CString str;
         auto at = mp_pts[ vecIndex[i].index ]; 
+        vector<Point> vecPoints;
 
-        for ( int i = 0; i < at.size(); ++ i )
+        for ( int j = 0; j < at.size(); ++ j )
         {
+#if 0
             TCHAR szBuf[100] = { 0 };
-            _stprintf(szBuf, TEXT("(%d, %d)"), at[i].x, at[i].y); 
+            _stprintf(szBuf, TEXT("(%d, %d)"), at[ j ].x, at[ j ].y); 
             str += CString(szBuf);
             str += CString(TEXT(", "));
+#endif
              
-            vecPoints.push_back(Point(at[ i ].x, at[ i ].y));
+            vecPoints.push_back(Point(at[ j ].x, at[ j ].y));
         }
          
         vvecPoints.push_back(vecPoints);  

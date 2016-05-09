@@ -331,7 +331,7 @@ bool CGdiPlusImage::DrawImage(CDC* pDC, CRect& rcDraw, CRect& rcCanvas)
         rcDrawRect.Width = rcDraw.Width();
         rcDrawRect.Height = rcDraw.Height(); 
 
-        //Point pts[ ] = { Point(10 + rcDraw.left, 10 + rcDraw.top), Point(50 + rcDraw.left, 50 + rcDraw.top), Point(100 + rcDraw.left, 500 + rcDraw.top) };
+        // »­±Ê
         Pen pen(Color(255, 0, 0), 2); 
 
         Matrix mtr;
@@ -357,14 +357,22 @@ bool CGdiPlusImage::DrawImage(CDC* pDC, CRect& rcDraw, CRect& rcCanvas)
             {
                 pts[ j ] = m_vvecPoints[ i ][ j ]; 
                 pts[ j ].X += rcDraw.left;
-                pts[ j ].Y += rcDraw.top;
+                pts[ j ].Y += rcDraw.top; 
+            }  
 
+            //for ( int j = 0; j < nCount - 1; ++ j )
+            { 
+               // pGraphics->DrawLine(&pen, pts[ j ], pts[ j +1 ]); 
             } 
-          
-            pGraphics->DrawLines(&pen, pts, nCount);
+
+  
+                pGraphics->DrawLines(&pen, pts, nCount);
+                //pGraphics->DrawPolygon(&pen, pts, nCount); 
+        
+
 
             delete[] pts;
-            pts = NULL;
+            pts = NULL; 
         }
 
 
@@ -425,18 +433,25 @@ void CGdiPlusImage::SetRecLines(std::vector< std::vector<Point> >& vvecPoints)
 {
     for ( int i = 0; i < m_vvecPoints.size(); ++ i )
     {
-        m_vvecPoints[i].clear();
+        for ( int j = 0; j < m_vvecPoints[ i ].size(); ++ j )
+        {
+            m_vvecPoints[ j ].clear();
+        } 
     } 
     m_vvecPoints.clear(); 
     m_vvecPoints.assign(vvecPoints.begin(), vvecPoints.end());
 }
 
 void CGdiPlusImage::ClearRecLines()
-{
+{ 
     for ( int i = 0; i < m_vvecPoints.size(); ++ i )
     {
-        m_vvecPoints[i].clear();
+        for ( int j = 0; j < m_vvecPoints[ i ].size(); ++ j )
+        {
+            m_vvecPoints[ j ].clear();
+        } 
     } 
+
     m_vvecPoints.clear(); 
 }
 
